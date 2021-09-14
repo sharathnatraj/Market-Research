@@ -6,9 +6,8 @@ import os
 def extract_section(df, section_start_heading, section_end_heading):
     idx_st = np.where(df[0] == section_start_heading)[0][0]
     idx_ed = np.where(df[0] == section_end_heading)[0][0]
-    dfpl = df.iloc[idx_st:idx_ed]
-    dfpl = dfpl.dropna(axis=1, how="all")
-    dfpl = dfpl.dropna().T
+    dfpl = df.iloc[idx_st + 1:idx_ed - 1]
+    dfpl = dfpl.dropna(how="all").dropna(axis=1, how='all').T
     dfpl.columns = dfpl.iloc[0]
     dfpl = dfpl[1:]  # take the data less the header row
     return dfpl
@@ -17,6 +16,7 @@ def extract_section(df, section_start_heading, section_end_heading):
 if __name__ == '__main__':
     datadirectory = "./../data/"
     isFirstFile = True
+    columns = []
     for filename in os.listdir(datadirectory):
         if filename.endswith(".xlsx"):
             xls = pd.ExcelFile(os.path.join(datadirectory, filename), engine='openpyxl')
@@ -30,6 +30,9 @@ if __name__ == '__main__':
             dfcf = extract_section(df, section_start_heading='CASH FLOW:', section_end_heading='DERIVED:')
             dfpl['Company'] = comp
 
-            dfpl.merge(dfbl).merge(dfcf).to_csv('./../data/consolidated_data.csv', mode='a', index=False,
-                                                header=isFirstFile)
+            merged_data = dfpl.merge(dfbl).merge(dfcf)
+            if isFirstFile:
+                columns = merged_data.columns.values
+            merged_data.to_csv('./../data/consolidated_data.csv', mode='a', index=False,
+                               header=isFirstFile, columns=columns)
             isFirstFile = False
